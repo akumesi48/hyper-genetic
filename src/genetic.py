@@ -6,11 +6,11 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import roc_curve, auc
 
 # get titanic & test csv files as a DataFrame
-train = pd.read_csv("./titanic_train.csv")
+train = pd.read_csv("data/titanic_train.csv")
 print(train.shape)
 
-### Data Cleansing
-#Checking for missing data
+# Data Cleansing
+# Checking for missing data
 NAs = pd.concat([train.isnull().sum()], axis=1, keys=['Train'])
 NAs[NAs.sum(axis=1) > 0]
 # Filling missing Age values with mean
@@ -21,26 +21,31 @@ train['Pclass'] = train['Pclass'].apply(str)
 
 # Getting Dummies from all other categorical vars
 for col in train.dtypes[train.dtypes == 'object'].index:
-	for_dummy = train.pop(col)
-	train = pd.concat([train, pd.get_dummies(for_dummy, prefix=col)], axis=1)
+    for_dummy = train.pop(col)
+    train = pd.concat([train, pd.get_dummies(for_dummy, prefix=col)], axis=1)
 
 labels = train.pop('Survived')
 
 # Split train test 75:25
 from sklearn.model_selection import train_test_split
+
 x_train, x_test, y_train, y_test = train_test_split(train, labels, test_size=0.25)
 
-### Train
 
-### Run model function
-def train_gbm(trainset_feature, trainset_label, testset_feature, testset_label, learning_rate=0.01, n_estimators=50, max_depth=10, min_samples_split=0.5, min_samples_leaf=0.2, max_features=15):
-	model = GradientBoostingClassifier(learning_rate=learning_rate, n_estimators=n_estimators, max_depth=max_depth, min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf, max_features=max_features)
-	model.fit(trainset_feature, trainset_label)
-	pred_label = model.predict(x_test)
+# Train
 
-	false_positive_rate, true_positive_rate, thresholds = roc_curve(testset_label, pred_label)
-	roc_auc = auc(false_positive_rate, true_positive_rate)
-	return roc_auc
+# Run model function
+def train_gbm(trainset_feature, trainset_label, testset_feature, testset_label, learning_rate=0.01, n_estimators=50,
+              max_depth=10, min_samples_split=0.5, min_samples_leaf=0.2, max_features=15):
+    model = GradientBoostingClassifier(learning_rate=learning_rate, n_estimators=n_estimators, max_depth=max_depth,
+                                       min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf,
+                                       max_features=max_features)
+    model.fit(trainset_feature, trainset_label)
+    pred_label = model.predict(testset_feature)
+
+    false_positive_rate, true_positive_rate, thresholds = roc_curve(testset_label, pred_label)
+    roc_auc = auc(false_positive_rate, true_positive_rate)
+    return roc_auc
 
 
 # learning_rates = [1, 0.5, 0.25, 0.1, 0.05, 0.01]
@@ -56,4 +61,4 @@ def train_gbm(trainset_feature, trainset_label, testset_feature, testset_label, 
 print(train_gbm(x_train, y_train, x_test, y_test))
 # print train.shape
 
-# class 
+# class
