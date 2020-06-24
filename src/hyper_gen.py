@@ -13,18 +13,17 @@ def init_pop(no_of_population):
     max_depths = np.empty([no_of_population, 1], dtype=np.uint8)
     min_samples_splits = np.empty([no_of_population, 1])
     min_samples_leafs = np.empty([no_of_population, 1])
-    # max_features = np.empty([no_of_population, 1], dtype=np.uint8)
-    max_features = np.empty([no_of_population, 1])
+    max_features = np.empty([no_of_population, 1], dtype=np.uint8)
+    # max_features = np.empty([no_of_population, 1])
 
     for i in range(no_of_population):
-        print(i)
         learning_rates[i] = round(random.uniform(0.01, 1), 2)
         n_estimators[i] = int(random.randrange(10, 500, step=20))
         max_depths[i] = int(random.randrange(1, 32, step=1))
         min_samples_splits[i] = round(random.uniform(0.01, 1.0), 2)
-        min_samples_leafs[i] = round(random.uniform(0.01, 10.0), 2)
-        # max_features[i] = int(random.randrange(2, 1732, step=2))
-        max_features[i] = round(random.uniform(0.01, 1.0), 2)
+        min_samples_leafs[i] = round(random.uniform(0.01, 0.5), 2)
+        max_features[i] = int(random.randrange(2, 1732, step=2))
+        # max_features[i] = round(random.uniform(0.01, 1.0), 2)
 
     population = np.concatenate(
         (learning_rates, n_estimators, max_depths, min_samples_splits, min_samples_leafs, max_features), axis=1)
@@ -62,7 +61,7 @@ def train_gbm(trainset_feature, trainset_label, testset_feature, testset_label, 
               max_depth=10, min_samples_split=0.5, min_samples_leaf=0.2, max_features=15):
     model = GradientBoostingClassifier(learning_rate=learning_rate, n_estimators=n_estimators, max_depth=max_depth,
                                        min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf,
-                                       max_features=15)
+                                       max_features=max_features)
     model.fit(trainset_feature, trainset_label)
     pred_label = model.predict(testset_feature)
 
@@ -72,16 +71,16 @@ def train_gbm(trainset_feature, trainset_label, testset_feature, testset_label, 
 
 
 # train the data and find fitness score
-def train_population(population, trainset_feature, trainset_label, testset_feature, testset_label):
+def train_populations(population, trainset_feature, trainset_label, testset_feature, testset_label):
     fitness_scores = []
     for i in range(population.shape[0]):
         learning_rate = population[i][0]
-        n_estimators = population[i][1]
+        n_estimators = int(population[i][1])
         max_depth = int(population[i][2])
         min_samples_split = population[i][3]
         min_samples_leaf = population[i][4]
-        # max_features = int(population[i][5])
-        max_features = population[i][5]
+        max_features = int(population[i][5])
+        # max_features = population[i][5]
         fitness_scores.append(train_gbm(trainset_feature, trainset_label, testset_feature, testset_label,
                                         learning_rate, n_estimators, max_depth, min_samples_split, min_samples_leaf,
                                         max_features))
@@ -138,9 +137,9 @@ def mutation(crossover, no_of_param):
     constraint_cap[1, :] = [10, 2000]  # min/max n_estimator
     constraint_cap[2, :] = [1, 32]  # min/max depth
     constraint_cap[3, :] = [0.01, 1.0]  # min/max min_samples_split
-    constraint_cap[4, :] = [0.01, 10.0]  # min/max min_samples_leaf
-    # constraint_cap[5, :] = [2, 1732]  # min/max max_features
-    constraint_cap[5, :] = [0.01, 1.0]  # min/max max_features
+    constraint_cap[4, :] = [0.01, 0.5]  # min/max min_samples_leaf
+    constraint_cap[5, :] = [2, 1732]  # min/max max_features
+    # constraint_cap[5, :] = [0.01, 1.0]  # min/max max_features
 
     # learning_rates[i] = round(random.uniform(0.01, 1), 2)
     # n_estimators[i] = int(random.randrange(10, 500, step=20))
@@ -162,10 +161,10 @@ def mutation(crossover, no_of_param):
     if parameterSelect == 3:  # min_samples_split
         mutationValue = round(np.random.uniform(-0.5, 1.0), 2)
     if parameterSelect == 4:  # min_samples_leaf
-        mutationValue = round(np.random.uniform(-0.5, 1.0), 2)
+        mutationValue = round(np.random.uniform(-0.1, 0.5), 2)
     if parameterSelect == 5:  # max_features
-        # mutationValue = np.random.randint(-10, 2000, 1)
-        mutationValue = round(np.random.uniform(-0.5, 1.0), 2)
+        mutationValue = np.random.randint(-1000, 2000, 1)
+        # mutationValue = round(np.random.uniform(-0.5, 1.0), 2)
 
     # indtroduce mutation by changing one parameter, and set to max or min if it goes out of range
     for idx in range(crossover.shape[0]):
