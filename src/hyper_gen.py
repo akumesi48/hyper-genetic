@@ -19,7 +19,7 @@ def init_pop(no_of_population):
     for i in range(no_of_population):
         learning_rates[i] = round(random.uniform(0.01, 1), 2)
         n_estimators[i] = int(random.randrange(10, 500, step=20))
-        max_depths[i] = int(random.randrange(1, 32, step=1))
+        max_depths[i] = int(random.randrange(1, 15, step=1))
         min_samples_splits[i] = round(random.uniform(0.01, 1.0), 2)
         min_samples_leafs[i] = round(random.uniform(0.01, 0.5), 2)
         max_features[i] = int(random.randrange(2, 1732, step=2))
@@ -33,27 +33,6 @@ def init_pop(no_of_population):
 # def fitness_f1score(y_true, y_pred):
 #     fitness = round((f1_score(y_true, y_pred, average='weighted')), 4)
 #     return fitness
-
-
-# # train the data and find fitness score
-# def train_population(population, dMatrixTrain, dMatrixtest, y_test):
-#     fScore = []
-#     for i in range(population.shape[0]):
-#         param = {'objective': 'binary:logistic',
-#                  'learning_rate': population[i][0],
-#                  'n_estimators': population[i][1],
-#                  'max_depth': int(population[i][2]),
-#                  'min_child_weight': population[i][3],
-#                  'gamma': population[i][4],
-#                  'subsample': population[i][5],
-#                  'colsample_bytree': population[i][6],
-#                  'seed': 24}
-#         num_round = 100
-#         xgbT = xgb.train(param, dMatrixTrain, num_round)
-#         preds = xgbT.predict(dMatrixtest)
-#         preds = preds > 0.5
-#         fScore.append(fitness_f1score(y_test, preds))
-#     return fScore
 
 
 # Run model to get fitness function
@@ -135,7 +114,7 @@ def mutation(crossover, no_of_param):
 
     constraint_cap[0:] = [0.01, 1.0]  # min/max learning rate
     constraint_cap[1, :] = [10, 2000]  # min/max n_estimator
-    constraint_cap[2, :] = [1, 32]  # min/max depth
+    constraint_cap[2, :] = [1, 15]  # min/max depth
     constraint_cap[3, :] = [0.01, 1.0]  # min/max min_samples_split
     constraint_cap[4, :] = [0.01, 0.5]  # min/max min_samples_leaf
     constraint_cap[5, :] = [2, 1732]  # min/max max_features
@@ -157,7 +136,7 @@ def mutation(crossover, no_of_param):
     if parameterSelect == 1:  # n_estimators
         mutationValue = np.random.randint(-200, 200, 1)
     if parameterSelect == 2:  # max_depth
-        mutationValue = np.random.randint(-5, 5, 1)
+        mutationValue = np.random.randint(-5, 15, 1)
     if parameterSelect == 3:  # min_samples_split
         mutationValue = round(np.random.uniform(-0.5, 1.0), 2)
     if parameterSelect == 4:  # min_samples_leaf

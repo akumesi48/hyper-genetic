@@ -10,9 +10,9 @@ from src.data_preparation import *
 np.random.seed(7840)
 
 # Configuration for GA parameters
-population_size = 20  # number of parents to start
+population_size = 8  # number of parents to start
 crossover_parent = 4  # number of parents that will mate
-no_of_generations = 10  # number of generation that will be created
+no_of_generations = 5  # number of generation that will be created
 
 # initialize the population with randomly generated parameters
 populations = init_pop(population_size)
