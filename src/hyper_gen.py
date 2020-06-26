@@ -5,6 +5,147 @@ import matplotlib.pyplot as plt
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import roc_curve, auc
 import random
+import time
+
+
+class Individual:
+    def __init__(self, parameters=None):
+        if parameters is None:
+            self.learning_rate = round(random.uniform(0.01, 1), 2)
+            self.n_estimators = int(random.randrange(10, 500, step=20))
+            self.max_depth = int(random.randrange(1, 15, step=1))
+            self.min_samples_split = round(random.uniform(0.01, 1.0), 2)
+            self.min_samples_leaf = round(random.uniform(0.01, 0.5), 2)
+            self.max_features = int(random.randrange(2, 1732, step=2))
+        else:
+            self.learning_rate = parameters[0]
+            self.n_estimators = parameters[1]
+            self.max_depth = parameters[2]
+            self.min_samples_split = parameters[3]
+            self.min_samples_leaf = parameters[4]
+            self.max_features = parameters[5]
+        self.score = -1
+        self.auc = -1
+        self.time = -1
+
+    def train_model(self, train_feature, train_label, test_feature, test_label):
+        start_time = time.time()
+        model = GradientBoostingClassifier(learning_rate=self.learning_rate,
+                                           n_estimators=self.n_estimators,
+                                           max_depth=self.max_depth,
+                                           min_samples_split=self.min_samples_split,
+                                           min_samples_leaf=self.min_samples_leaf,
+                                           max_features=self.max_features)
+        model.fit(train_feature, train_label)
+        pred_label = model.predict(test_feature)
+        total_time = (time.time() - start_time)
+        self.time = total_time
+
+        false_positive_rate, true_positive_rate, thresholds = roc_curve(test_label, pred_label)
+        roc_auc = auc(false_positive_rate, true_positive_rate)
+        self.auc = roc_auc
+
+    def fitness_func(self):
+        fitness_score = self.auc # determine fitness function here
+        self.score = fitness_score
+        return fitness_score
+
+    def get_score(self):
+        return self.score
+
+    def get_param(self):
+        return ([self.learning_rate,
+                 self.n_estimators,
+                 self.max_depth,
+                 self.min_samples_split,
+                 self.min_samples_leaf,
+                 self.max_features])
+
+    def explain(self):
+        print(f"Individual Score: {self.score}")
+        print("Parameters:")
+        print(f"learning_rate       = {self.learning_rate}")
+        print(f"n_estimators        = {self.n_estimators}")
+        print(f"max_depth           = {self.max_depth}")
+        print(f"min_samples_split   = {self.min_samples_leaf}")
+        print(f"min_samples_leaf    = {self.min_samples_leaf}")
+        print(f"max_features        = {self.max_features}")
+
+
+class Generation:
+    def __init__(self, population_list=None):
+        if population_list is None:
+            self.populations = []
+        else:
+            self.populations = population_list
+        self.survived_populations = []
+        self.fitness_scores = []
+
+    def init_pop(self, population_size):
+        for i in range(population_size):
+            self.populations.append(Individual())
+
+    def train_populations(self, train_feature, train_label, test_feature, test_label):
+        for individual in self.populations:
+            individual.train_model(train_feature, train_label, test_feature, test_label)
+            score = individual.fitness_func()
+            self.fitness_scores.append(score)
+
+    def select_survived_pop(self, survive_individual):
+        self.survived_populations = []
+        score_rank = list(enumerate(self.fitness_scores))
+        score_rank.sort(reverse=True, key=lambda x: x[1])
+        for rank in score_rank[:survive_individual]:
+            self.survived_populations.append(self.populations[rank[0]])
+
+    def add_population(self, new_populations):
+        self.populations += new_populations
+
+    def cross_over(self, cv_ratio=1.0):
+        no_of_child = len(self.populations) - len(self.survived_populations)
+        child_list = []
+        parent_index = [0, 1]
+        # check case for single survived population
+        if len(self.survived_populations) > 1:
+            for i in range(round(cv_ratio*no_of_child)):
+                if len(self.survived_populations) > 2:
+                    # random select two candidate from survived population
+                    candidates_list = range(len(self.survived_populations))
+                    parent_index[0] = random.choice(candidates_list)
+                    parent_index[1] = random.choice(candidates_list)
+                    while parent_index[0] == parent_index[1]:
+                        parent_index[1] = random.choice(candidates_list)
+                # crossover to breed new population
+                param_index = [random.randint(0, 1) for index in range(6)]
+                child = Individual([self.survived_populations[parent_index[param_index[0]]].learning_rate,
+                                    self.survived_populations[parent_index[param_index[1]]].n_estimators,
+                                    self.survived_populations[parent_index[param_index[2]]].max_depth,
+                                    self.survived_populations[parent_index[param_index[3]]].min_samples_split,
+                                    self.survived_populations[parent_index[param_index[4]]].min_samples_leaf,
+                                    self.survived_populations[parent_index[param_index[5]]].max_features])
+                child_list.append(child)
+        # fill the rest with immigrant population
+        for i in range(no_of_child - (round(cv_ratio*no_of_child))):
+            child_list.append(Individual())
+        return child_list
+
+    def mutation(self, prob_of_mutation, mutation_rate):
+        no_of_mutation = round(mutation_rate*6)
+        for individual in self.populations:
+            if random.uniform(0, 1) < prob_of_mutation:
+                param_index = [random.randint(0, 6) for index in range(no_of_mutation)]
+                if 0 in param_index:
+                    individual.learning_rate = round(random.uniform(0.01, 1), 2)
+                if 1 in param_index:
+                    individual.n_estimators = int(random.randrange(10, 500, step=20))
+                if 2 in param_index:
+                    individual.max_depth = int(random.randrange(1, 15, step=1))
+                if 3 in param_index:
+                    individual.min_samples_split = round(random.uniform(0.01, 1.0), 2)
+                if 4 in param_index:
+                    individual.min_samples_leaf = round(random.uniform(0.01, 0.5), 2)
+                if 5 in param_index:
+                    individual.max_features = int(random.randrange(2, 1732, step=2))
 
 
 def init_pop(no_of_population):
@@ -145,7 +286,7 @@ def mutation(crossover, no_of_param):
         mutationValue = np.random.randint(-1000, 2000, 1)
         # mutationValue = round(np.random.uniform(-0.5, 1.0), 2)
 
-    # indtroduce mutation by changing one parameter, and set to max or min if it goes out of range
+    # introduce mutation by changing one parameter, and set to max or min if it goes out of range
     for idx in range(crossover.shape[0]):
         crossover[idx, parameterSelect] = crossover[idx, parameterSelect] + mutationValue
         if (crossover[idx, parameterSelect] > constraint_cap[parameterSelect, 1]):

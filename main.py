@@ -6,75 +6,33 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import roc_curve, auc
 from src.hyper_gen import *
 from src.data_preparation import *
+import time
 
-np.random.seed(7840)
+# np.random.seed(7840)
+random.seed(7840)
 
 # Configuration for GA parameters
-population_size = 8  # number of parents to start
-crossover_parent = 4  # number of parents that will mate
-no_of_generations = 5  # number of generation that will be created
+population_size = 25
+crossover_parent = 4
+no_of_generations = 20
 
-# initialize the population with randomly generated parameters
-populations = init_pop(population_size)
-fitness_history = np.empty([no_of_generations + 1, population_size])
-genetic_history = np.empty([(no_of_generations + 1) * population_size, populations.shape[1]])
-# insert the value of initial parameters in history
-genetic_history[0:population_size, :] = populations
+start_time = time.time()
 
-for generation in range(no_of_generations):
-    print(f"This is number {generation} generation")
+generations = [Generation()]
+generations[0].init_pop(population_size)
+for gen_no in range(no_of_generations-1):
+    print(f"Training generation number {gen_no}")
+    generations[gen_no].train_populations(x_train, y_train, x_test, y_test)
+    generations[gen_no].select_survived_pop(crossover_parent)
+    print(f"Best score of generation {gen_no} : {generations[gen_no].survived_populations[0].score}")
+    child = generations[gen_no].cross_over(0.8)
+    generations.append(Generation(child))
+    generations[gen_no+1].mutation(0.3, 0.5)
+    generations[gen_no+1].add_population(generations[gen_no].survived_populations)
+print(f"Training generation number {no_of_generations-1}")
+generations[-1].train_populations(x_train, y_train, x_test, y_test)
+generations[-1].select_survived_pop(crossover_parent)
+generations[-1].survived_populations[0].explain()
 
-    # train the dataset and obtain fitness
-    fitness_score = train_populations(population=populations,
-                                      trainset_feature=x_train,
-                                      trainset_label=y_train,
-                                      testset_feature=x_test,
-                                      testset_label=y_test)
-    fitness_history[generation, :] = fitness_score
-
-    # best score in the current iteration
-    print('Best fitness score in the this iteration = {}'.format(np.max(fitness_history[generation, :])))
-    # survival of the fittest - take the top parents, based on the fitness value and number of parents needed to be
-    # selected
-    parents = get_best_population(population=populations,
-                                  fitness=fitness_score,
-                                  no_of_parent=crossover_parent)
-
-    # mate these parents to create children having parameters from these parents (we are using uniform crossover)
-    children = crossover_uniform(parents=parents,
-                                 no_of_child=(population_size - parents.shape[0]),
-                                 no_of_param=parents.shape[1])
-
-    # add mutation to create genetic diversity
-    children_mutated = mutation(children, parents.shape[1])
-
-    '''
-    We will create new population, which will contain parents that where selected previously based on the
-    fitness score and rest of them  will be children
-    '''
-    populations[0:parents.shape[0], :] = parents  # fittest parents
-    populations[parents.shape[0]:, :] = children_mutated  # children
-
-    # score parent information
-    genetic_history[(generation + 1) * population_size: (generation + 1) * population_size + population_size,
-    :] = populations
-
-# Best solution from the final iteration
-fitness = train_populations(population=populations,
-                            trainset_feature=x_train,
-                            trainset_label=y_train,
-                            testset_feature=x_test,
-                            testset_label=y_test)
-fitness_history[no_of_generations, :] = fitness
-# index of the best solution
-bestFitnessIndex = np.where(fitness == np.max(fitness))[0][0]
-# Best fitness
-print("Best fitness is =", fitness[bestFitnessIndex])
-# Best parameters
-print("Best parameters are:")
-print('learning_rate', populations[bestFitnessIndex][0])
-print('n_estimators', int(populations[bestFitnessIndex][1]))
-print('max_depth', int(populations[bestFitnessIndex][2]))
-print('min_samples_split', populations[bestFitnessIndex][3])
-print('min_samples_leaf', populations[bestFitnessIndex][4])
-print('max_features', int(populations[bestFitnessIndex][5]))
+total_time = (time.time() - start_time)
+print(f"Total time elapse: {total_time}")
