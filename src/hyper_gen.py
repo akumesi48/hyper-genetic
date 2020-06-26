@@ -67,7 +67,7 @@ class Individual:
         print(f"learning_rate       = {self.learning_rate}")
         print(f"n_estimators        = {self.n_estimators}")
         print(f"max_depth           = {self.max_depth}")
-        print(f"min_samples_split   = {self.min_samples_leaf}")
+        print(f"min_samples_split   = {self.min_samples_split}")
         print(f"min_samples_leaf    = {self.min_samples_leaf}")
         print(f"max_features        = {self.max_features}")
 
@@ -110,19 +110,19 @@ class Generation:
             for i in range(round(cv_ratio*no_of_child)):
                 if len(self.survived_populations) > 2:
                     # random select two candidate from survived population
-                    candidates_list = range(len(self.survived_populations))
+                    candidates_list = range(len(self.populations))
                     parent_index[0] = random.choice(candidates_list)
                     parent_index[1] = random.choice(candidates_list)
                     while parent_index[0] == parent_index[1]:
                         parent_index[1] = random.choice(candidates_list)
                 # crossover to breed new population
                 param_index = [random.randint(0, 1) for index in range(6)]
-                child = Individual([self.survived_populations[parent_index[param_index[0]]].learning_rate,
-                                    self.survived_populations[parent_index[param_index[1]]].n_estimators,
-                                    self.survived_populations[parent_index[param_index[2]]].max_depth,
-                                    self.survived_populations[parent_index[param_index[3]]].min_samples_split,
-                                    self.survived_populations[parent_index[param_index[4]]].min_samples_leaf,
-                                    self.survived_populations[parent_index[param_index[5]]].max_features])
+                child = Individual([self.populations[parent_index[param_index[0]]].learning_rate,
+                                    self.populations[parent_index[param_index[1]]].n_estimators,
+                                    self.populations[parent_index[param_index[2]]].max_depth,
+                                    self.populations[parent_index[param_index[3]]].min_samples_split,
+                                    self.populations[parent_index[param_index[4]]].min_samples_leaf,
+                                    self.populations[parent_index[param_index[5]]].max_features])
                 child_list.append(child)
         # fill the rest with immigrant population
         for i in range(no_of_child - (round(cv_ratio*no_of_child))):
