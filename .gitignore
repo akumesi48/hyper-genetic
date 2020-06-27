@@ -145,3 +145,6 @@ out/
 
 # python compile files
 *.pyc
+
+# macOSX
+.DS_Store
