@@ -1,6 +1,7 @@
 # ignore files
 
 # PyCharm
+/.idea
 /_windows
 /codestyles
 colors.scheme.xml
@@ -8,6 +9,9 @@ debugger.xml
 find.xml
 github.xml
 wsl.distributions.xml
+
+# python compile files
+*.pyc
 
 # log files
 *.log
