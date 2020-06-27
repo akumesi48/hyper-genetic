@@ -1,0 +1,13 @@
+# ignore files
+
+# PyCharm
+/_windows
+/codestyles
+colors.scheme.xml
+debugger.xml
+find.xml
+github.xml
+wsl.distributions.xml
+
+# log files
+*.log
