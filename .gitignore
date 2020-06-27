@@ -137,3 +137,6 @@ debugger.xml
 find.xml
 github.xml
 wsl.distributions.xml
+
+# python compile files
+*.pyc
