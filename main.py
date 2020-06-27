@@ -7,12 +7,15 @@ from sklearn.metrics import roc_curve, auc
 from src.hyper_gen import *
 from src.data_preparation import *
 import time
+import logging
 
+logging.basicConfig(filename='myapp.log', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s %(message)s')
 # np.random.seed(7840)
 # random.seed(7840)
 
 # Configuration for GA parameters
-population_size = 20
+population_size = 50
 crossover_parent = 4
 no_of_generations = 10
 
@@ -25,7 +28,7 @@ for gen_no in range(no_of_generations-1):
     generations[gen_no].train_populations(x_train, y_train, x_test, y_test)
     generations[gen_no].select_survived_pop(crossover_parent)
     print(f"Best score of generation {gen_no} : {generations[gen_no].survived_populations[0].score}")
-    # generations[gen_no].survived_populations[0].explain()
+    generations[gen_no].survived_populations[0].explain()
     child = generations[gen_no].cross_over(0.8)
     generations.append(Generation(child))
     generations[gen_no+1].mutation(0.3, 0.5)
@@ -37,3 +40,9 @@ generations[-1].survived_populations[0].explain()
 
 total_time = (time.time() - start_time)
 print(f"Total time elapse: {total_time}")
+
+# x = Individual()
+# for i in range(10):
+#     x.train_model(x_train, y_train, x_test, y_test)
+#     print(x.auc)
+logging.info(f"Total elapse time = {total_time}")
