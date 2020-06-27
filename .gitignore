@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -128,9 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-=======
-# ignore files
->>>>>>> 6c738859918baa08a112a8467e11fa870f5cc834
 
 # PyCharm
 /_windows
