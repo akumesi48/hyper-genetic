@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import roc_curve, auc, f1_score, brier_score_loss
 import random
 import time
 import logging
@@ -24,6 +24,8 @@ class Individual:
             self.subsample = parameters[5]
         self.score = -1
         self.auc = -1
+        self.f1_score = -1
+        self.brier_score = -1
         self.time = -1
 
     def train_model(self, train_feature, train_label, test_feature, test_label):
@@ -36,21 +38,26 @@ class Individual:
                                            subsample=self.subsample,
                                            max_features='sqrt')
         model.fit(train_feature, train_label)
-        pred_label = model.predict(test_feature)
         total_time = (time.time() - start_time)
         self.time = total_time
 
+        # measurement scores
+        pred_label = model.predict(test_feature)
+        pred_prob = model.predict_proba(test_feature)
         false_positive_rate, true_positive_rate, thresholds = roc_curve(test_label, pred_label)
         roc_auc = auc(false_positive_rate, true_positive_rate)
-        self.auc = roc_auc
+        pred_prob = [x[1] for x in pred_prob]
+        self.auc = round(roc_auc, 4)
+        self.f1_score = round(f1_score(test_label, pred_label), 4)
+        self.brier_score = round(brier_score_loss(test_label, pred_prob), 4)
 
     def fitness_func(self):
-        fitness_score = self.auc # determine fitness function here
+        fitness_score = 1 - self.brier_score  # determine fitness function here
         self.score = fitness_score
         return fitness_score
 
     def get_score(self):
-        return self.score
+        return self.score, self.auc, self.f1_score, self.brier_score
 
     def get_param(self):
         return ([self.learning_rate,
@@ -61,15 +68,16 @@ class Individual:
                  self.subsample])
 
     def explain(self, logger=None):
-        print(f"Individual Score: {self.score}")
-        print("Parameters:")
-        print(f"learning_rate       = {self.learning_rate}")
-        print(f"n_estimators        = {self.n_estimators}")
-        print(f"max_depth           = {self.max_depth}")
-        print(f"min_samples_split   = {self.min_samples_split}")
-        print(f"min_samples_leaf    = {self.min_samples_leaf}")
-        print(f"subsample        = {self.subsample}")
-        if logger is not None:
+        if logger is None:
+            print(f"Individual Score: {self.score}")
+            print("Parameters:")
+            print(f"learning_rate       = {self.learning_rate}")
+            print(f"n_estimators        = {self.n_estimators}")
+            print(f"max_depth           = {self.max_depth}")
+            print(f"min_samples_split   = {self.min_samples_split}")
+            print(f"min_samples_leaf    = {self.min_samples_leaf}")
+            print(f"subsample        = {self.subsample}")
+        else:
             logger.info(f"Individual Score: {self.score}")
             logger.info("Parameters:")
             logger.info(f"learning_rate       = {self.learning_rate}")
@@ -137,22 +145,38 @@ class Generation:
             child_list.append(Individual())
         return child_list
 
-    def mutation(self, prob_of_mutation, mutation_rate):
-        no_of_mutation = round(mutation_rate*6)
-        for individual in self.populations:
-            if random.uniform(0, 1) < prob_of_mutation:
-                param_index = [random.randint(0, 6) for index in range(no_of_mutation)]
-                if 0 in param_index:
+    def mutation(self, prob_of_mutation, mutation_rate=None):
+        no_of_parameters = 6
+        if mutation_rate is not None:
+            no_of_mutation = round(mutation_rate*no_of_parameters)
+            for individual in self.populations:
+                if random.uniform(0, 1) < prob_of_mutation:
+                    param_index = [random.randint(0, 6) for index in range(no_of_mutation)]
+                    if 0 in param_index:
+                        individual.learning_rate = round(random.uniform(0.01, 1), 2)
+                    if 1 in param_index:
+                        individual.n_estimators = int(random.randrange(10, 500, step=20))
+                    if 2 in param_index:
+                        individual.max_depth = int(random.randrange(1, 15, step=1))
+                    if 3 in param_index:
+                        individual.min_samples_split = round(random.uniform(0.01, 1.0), 2)
+                    if 4 in param_index:
+                        individual.min_samples_leaf = round(random.uniform(0.01, 0.5), 2)
+                    if 5 in param_index:
+                        individual.subsample = round(random.uniform(0.7, 1), 2)
+        else:
+            for individual in self.populations:
+                if random.uniform(0, 1) < prob_of_mutation:
                     individual.learning_rate = round(random.uniform(0.01, 1), 2)
-                if 1 in param_index:
+                if random.uniform(0, 1) < prob_of_mutation:
                     individual.n_estimators = int(random.randrange(10, 500, step=20))
-                if 2 in param_index:
+                if random.uniform(0, 1) < prob_of_mutation:
                     individual.max_depth = int(random.randrange(1, 15, step=1))
-                if 3 in param_index:
+                if random.uniform(0, 1) < prob_of_mutation:
                     individual.min_samples_split = round(random.uniform(0.01, 1.0), 2)
-                if 4 in param_index:
+                if random.uniform(0, 1) < prob_of_mutation:
                     individual.min_samples_leaf = round(random.uniform(0.01, 0.5), 2)
-                if 5 in param_index:
+                if random.uniform(0, 1) < prob_of_mutation:
                     individual.subsample = round(random.uniform(0.7, 1), 2)
 
 
