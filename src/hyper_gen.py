@@ -1,11 +1,9 @@
 import numpy as np
-import pandas as pd
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import roc_curve, auc
 import random
 import time
+import logging
 
 
 class Individual:
@@ -16,14 +14,14 @@ class Individual:
             self.max_depth = int(random.randrange(1, 15, step=1))
             self.min_samples_split = round(random.uniform(0.01, 1.0), 2)
             self.min_samples_leaf = round(random.uniform(0.01, 0.5), 2)
-            self.max_features = int(random.randrange(2, 1732, step=2))
+            self.subsample = round(random.uniform(0.7, 1), 2)
         else:
             self.learning_rate = parameters[0]
             self.n_estimators = parameters[1]
             self.max_depth = parameters[2]
             self.min_samples_split = parameters[3]
             self.min_samples_leaf = parameters[4]
-            self.max_features = parameters[5]
+            self.subsample = parameters[5]
         self.score = -1
         self.auc = -1
         self.time = -1
@@ -35,7 +33,8 @@ class Individual:
                                            max_depth=self.max_depth,
                                            min_samples_split=self.min_samples_split,
                                            min_samples_leaf=self.min_samples_leaf,
-                                           max_features=self.max_features)
+                                           subsample=self.subsample,
+                                           max_features='sqrt')
         model.fit(train_feature, train_label)
         pred_label = model.predict(test_feature)
         total_time = (time.time() - start_time)
@@ -59,9 +58,9 @@ class Individual:
                  self.max_depth,
                  self.min_samples_split,
                  self.min_samples_leaf,
-                 self.max_features])
+                 self.subsample])
 
-    def explain(self):
+    def explain(self, logger=None):
         print(f"Individual Score: {self.score}")
         print("Parameters:")
         print(f"learning_rate       = {self.learning_rate}")
@@ -69,7 +68,16 @@ class Individual:
         print(f"max_depth           = {self.max_depth}")
         print(f"min_samples_split   = {self.min_samples_split}")
         print(f"min_samples_leaf    = {self.min_samples_leaf}")
-        print(f"max_features        = {self.max_features}")
+        print(f"subsample        = {self.subsample}")
+        if logger is not None:
+            logger.info(f"Individual Score: {self.score}")
+            logger.info("Parameters:")
+            logger.info(f"learning_rate       = {self.learning_rate}")
+            logger.info(f"n_estimators        = {self.n_estimators}")
+            logger.info(f"max_depth           = {self.max_depth}")
+            logger.info(f"min_samples_split   = {self.min_samples_split}")
+            logger.info(f"min_samples_leaf    = {self.min_samples_leaf}")
+            logger.info(f"subsample        = {self.subsample}")
 
 
 class Generation:
@@ -122,7 +130,7 @@ class Generation:
                                     self.populations[parent_index[param_index[2]]].max_depth,
                                     self.populations[parent_index[param_index[3]]].min_samples_split,
                                     self.populations[parent_index[param_index[4]]].min_samples_leaf,
-                                    self.populations[parent_index[param_index[5]]].max_features])
+                                    self.populations[parent_index[param_index[5]]].subsample])
                 child_list.append(child)
         # fill the rest with immigrant population
         for i in range(no_of_child - (round(cv_ratio*no_of_child))):
@@ -145,7 +153,7 @@ class Generation:
                 if 4 in param_index:
                     individual.min_samples_leaf = round(random.uniform(0.01, 0.5), 2)
                 if 5 in param_index:
-                    individual.max_features = int(random.randrange(2, 1732, step=2))
+                    individual.subsample = round(random.uniform(0.7, 1), 2)
 
 
 def init_pop(no_of_population):

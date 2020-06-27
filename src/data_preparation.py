@@ -1,9 +1,6 @@
 import numpy as np
 import pandas as pd
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.metrics import roc_curve, auc
+
 
 # get titanic & test csv files as a DataFrame
 train = pd.read_csv("data/titanic_train.csv")
