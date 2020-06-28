@@ -51,6 +51,36 @@ class Individual:
         self.f1_score = round(f1_score(test_label, pred_label), 4)
         self.brier_score = round(brier_score_loss(test_label, pred_prob), 4)
 
+    def train_model_cv(self, df_feature, df_label, index_list):
+        start_time = time.time()
+        model = GradientBoostingClassifier(learning_rate=self.learning_rate,
+                                           n_estimators=self.n_estimators,
+                                           max_depth=self.max_depth,
+                                           min_samples_split=self.min_samples_split,
+                                           min_samples_leaf=self.min_samples_leaf,
+                                           subsample=self.subsample,
+                                           max_features='sqrt')
+        roc_auc_list = []
+        f1_score_list = []
+        brier_score_list = []
+        for index in index_list:
+            model.fit(df_feature.iloc[index[0]], df_label.iloc[index[0]])
+            # measurement scores
+            pred_label = model.predict(df_feature.iloc[index[1]])
+            pred_prob = model.predict_proba(df_feature.iloc[index[1]])
+            pred_prob = [x[1] for x in pred_prob]
+            false_positive_rate, true_positive_rate, thresholds = roc_curve(df_label.iloc[index[1]], pred_label)
+            roc_auc_list.append(auc(false_positive_rate, true_positive_rate))
+            f1_score_list.append(f1_score(df_label.iloc[index[1]], pred_label))
+            brier_score_list.append(brier_score_loss(df_label.iloc[index[1]], pred_prob))
+
+        total_time = (time.time() - start_time)
+        self.time = total_time
+
+        self.auc = round(sum(roc_auc_list)/len(roc_auc_list), 4)
+        self.f1_score = round(sum(f1_score_list)/len(f1_score_list), 4)
+        self.brier_score = round(sum(brier_score_list)/len(brier_score_list), 4)
+
     def fitness_func(self):
         fitness_score = (1 - self.brier_score)*self.auc  # determine fitness function here
         self.score = fitness_score
@@ -101,9 +131,12 @@ class Generation:
         for i in range(population_size):
             self.populations.append(Individual())
 
-    def train_populations(self, train_feature, train_label, test_feature, test_label):
+    def train_populations(self, train_feature, train_label, test_feature=None, test_label=None, index_list=None):
         for individual in self.populations:
-            individual.train_model(train_feature, train_label, test_feature, test_label)
+            if index_list is None:
+                individual.train_model(train_feature, train_label, test_feature, test_label)
+            else:
+                individual.train_model_cv(train_feature, train_label, index_list)
             score = individual.fitness_func()
             self.fitness_scores.append(score)
 

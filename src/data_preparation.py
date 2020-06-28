@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import StratifiedKFold, KFold
 
 
 # get titanic & test csv files as a DataFrame
@@ -26,4 +27,12 @@ labels = train.pop('Survived')
 # Split train test 75:25
 from sklearn.model_selection import train_test_split
 
-x_train, x_test, y_train, y_test = train_test_split(train, labels, test_size=0.25)
+x_train_tt, x_test_tt, y_train_tt, y_test_tt = train_test_split(train, labels, test_size=0.25)
+
+skf = KFold(5)
+train_index = []
+test_index = []
+for i, j in skf.split(x_train, y_train):
+    train_index.append(i)
+    test_index.append(j)
+index_list = (train_index, test_index)
