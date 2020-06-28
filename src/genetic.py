@@ -36,7 +36,7 @@ x_train, x_test, y_train, y_test = train_test_split(train, labels, test_size=0.2
 
 # Run model function
 def train_gbm(trainset_feature, trainset_label, testset_feature, testset_label, learning_rate=0.01, n_estimators=50,
-              max_depth=10, min_samples_split=0.5, min_samples_leaf=0.2, max_features=15):
+              max_depth=10, min_samples_split=0.5, min_samples_leaf=0.2, max_features='sqrt'):
     model = GradientBoostingClassifier(learning_rate=learning_rate, n_estimators=n_estimators, max_depth=max_depth,
                                        min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf,
                                        max_features=max_features)

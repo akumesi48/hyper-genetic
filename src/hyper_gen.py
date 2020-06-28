@@ -52,7 +52,7 @@ class Individual:
         self.brier_score = round(brier_score_loss(test_label, pred_prob), 4)
 
     def fitness_func(self):
-        fitness_score = 1 - self.brier_score  # determine fitness function here
+        fitness_score = (1 - self.brier_score)*self.auc  # determine fitness function here
         self.score = fitness_score
         return fitness_score
 
@@ -76,7 +76,7 @@ class Individual:
             print(f"max_depth           = {self.max_depth}")
             print(f"min_samples_split   = {self.min_samples_split}")
             print(f"min_samples_leaf    = {self.min_samples_leaf}")
-            print(f"subsample        = {self.subsample}")
+            print(f"subsample           = {self.subsample}")
         else:
             logger.info(f"Individual Score: {self.score}")
             logger.info("Parameters:")
@@ -85,7 +85,7 @@ class Individual:
             logger.info(f"max_depth           = {self.max_depth}")
             logger.info(f"min_samples_split   = {self.min_samples_split}")
             logger.info(f"min_samples_leaf    = {self.min_samples_leaf}")
-            logger.info(f"subsample        = {self.subsample}")
+            logger.info(f"subsample           = {self.subsample}")
 
 
 class Generation:

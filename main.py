@@ -1,6 +1,7 @@
 import logging
 import time
 from datetime import datetime
+from sklearn.model_selection import StratifiedKFold, KFold
 
 from src.data_preparation import *
 from src.hyper_gen import *
@@ -22,15 +23,15 @@ logger.addHandler(fh)
 # random.seed(7840)
 
 # Configuration for GA parameters
-population_size = 50
-no_of_generations = 10
+population_size = 100
+no_of_generations = 40
 crossover_parent = 4
 crossover_ratio = 0.8
 mutation_prob = 0.03
 mutation_rate = 0.5
 
 start_time = time.time()
-logger.debug(f"set max_feature = 'sqrt' and use brier score")
+logger.debug(f"set max_feature = 'sqrt' and use brier score with dynamic pc pm")
 logger.warning(f"Start simulation at {file_date}")
 logger.info(f"population size = {population_size}")
 logger.info(f"number of generation = {no_of_generations}")
@@ -45,25 +46,27 @@ for gen_no in range(no_of_generations-1):
     generations[gen_no].train_populations(x_train, y_train, x_test, y_test)
     generations[gen_no].select_survived_pop(crossover_parent)
     gen_score = generations[gen_no].survived_populations[0].get_score()
-    print(f"Best score of generation {gen_no} : score={gen_score[0]}, auc={gen_score[1]}")
-    logger.info(f"Best score of generation {gen_no} : score={gen_score[0]}, auc={gen_score[1]}")
+    print(f"Best score of generation {gen_no} : score={gen_score[0]}, auc={gen_score[1]}, brier={gen_score[3]}")
+    logger.info(f"Best score of generation {gen_no} : score={gen_score[0]}, auc={gen_score[1]}, brier={gen_score[3]}")
     generations[gen_no].survived_populations[0].explain(logger)
+    crossover_ratio = (gen_no+1)/no_of_generations
     child = generations[gen_no].cross_over(crossover_ratio)
     generations.append(Generation(child))
+    mutation_prob = 1 - (gen_no+1)/no_of_generations  # dynamic mutation
     generations[gen_no+1].mutation(mutation_prob)
     # generations[gen_no+1].mutation(mutation_prob, mutation_rate)
     generations[gen_no+1].add_population(generations[gen_no].survived_populations)
 print(f"Training generation number {no_of_generations-1}")
 logger.info(f"Training generation number {no_of_generations-1}")
-generations[-1].train_populations(x_train, y_train, x_test, y_test)
-generations[-1].select_survived_pop(crossover_parent)
-gen_score = generations[-1].survived_populations[0].get_score()
-logger.info(f"Best score of final generation : score={gen_score[0]}, auc={gen_score[1]}")
-generations[-1].survived_populations[0].explain(logger)
+generations[no_of_generations-1].train_populations(x_train, y_train, x_test, y_test)
+generations[no_of_generations-1].select_survived_pop(crossover_parent)
+gen_score = generations[no_of_generations-1].survived_populations[0].get_score()
+logger.info(f"Best score of final generation : score={gen_score[0]}, auc={gen_score[1]}, brier={gen_score[3]}")
+generations[no_of_generations-1].survived_populations[0].explain(logger)
 
 print(f"##### Best individual: ")
-print(f"Best score of final generation : score={gen_score[0]}, auc={gen_score[1]}")
-generations[-1].survived_populations[0].explain()
+print(f"Best score of final generation : score={gen_score[0]}, auc={gen_score[1]}, brier={gen_score[3]}")
+generations[no_of_generations-1].survived_populations[0].explain()
 
 total_time = (time.time() - start_time)
 print(f"Total time elapse: {total_time}")
@@ -73,3 +76,14 @@ logger.info(f"Total elapse time: {total_time}")
 # for i in range(10):
 #     x.train_model(x_train, y_train, x_test, y_test)
 #     print(x.auc)
+
+elite_population = []
+elite_score = []
+for gen in generations:
+    elite_population += [x for x in gen.survived_populations]
+    elite_score += [x.score for x in gen.survived_populations]
+elite_population = Generation(elite_population)
+elite_population.fitness_scores = elite_score
+for i in range(len(elite_population.populations)):
+    elite_population.populations[i].score = elite_score[i]
+elite_population.select_survived_pop(10)
