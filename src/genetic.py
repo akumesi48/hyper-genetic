@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import roc_curve, auc, f1_score, brier_score_loss
 
 # get titanic & test csv files as a DataFrame
 train = pd.read_csv("data/titanic_train.csv")
@@ -36,7 +36,7 @@ x_train, x_test, y_train, y_test = train_test_split(train, labels, test_size=0.2
 
 # Run model function
 def train_gbm(trainset_feature, trainset_label, testset_feature, testset_label, learning_rate=0.01, n_estimators=50,
-              max_depth=10, min_samples_split=0.5, min_samples_leaf=0.2, max_features=15):
+              max_depth=10, min_samples_split=0.5, min_samples_leaf=0.2, max_features='sqrt'):
     model = GradientBoostingClassifier(learning_rate=learning_rate, n_estimators=n_estimators, max_depth=max_depth,
                                        min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf,
                                        max_features=max_features)
@@ -48,6 +48,32 @@ def train_gbm(trainset_feature, trainset_label, testset_feature, testset_label, 
     return roc_auc
 
 
+# # grid
+# model = GradientBoostingClassifier(learning_rate=0.1,
+#                                    n_estimators=20,
+#                                    max_depth=6,
+#                                    min_samples_split=0.01,
+#                                    min_samples_leaf=0.05,
+#                                    subsample=1,
+#                                    max_features='sqrt')
+# genetic
+model = GradientBoostingClassifier(learning_rate=0.06,
+                                   n_estimators=230,
+                                   max_depth=3,
+                                   min_samples_split=0.39,
+                                   min_samples_leaf=0.03,
+                                   subsample=0.95,
+                                   max_features='sqrt')
+model.fit(x_train, y_train)
+pred_label = model.predict(x_test)
+
+false_positive_rate, true_positive_rate, thresholds = roc_curve(y_test, pred_label)
+roc_auc = auc(false_positive_rate, true_positive_rate)
+f1_score(y_test, pred_label)
+pred = model.predict_proba(x_test)
+pred_prob = [x[1] for x in pred]
+print(brier_score_loss(y_test, pred_prob))
+print(roc_auc)
 # learning_rates = [1, 0.5, 0.25, 0.1, 0.05, 0.01]
 # n_estimators = [1, 2, 4, 8, 16, 32, 64, 100, 200]
 # max_depths = np.linspace(1, 32, 32, endpoint=True)

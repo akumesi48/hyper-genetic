@@ -1,80 +1,93 @@
-import numpy as np
-import pandas as pd
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.metrics import roc_curve, auc
-from src.hyper_gen import *
-from src.data_preparation import *
+import logging
+import time
+from datetime import datetime
 
-np.random.seed(7840)
+# from src.data_preparation import *
+from src.data_prep_uci import *
+from src.hyper_gen import *
+
+file_date = datetime.today()
+
+logger = logging.getLogger('hyper-gen')
+logger.setLevel(logging.DEBUG)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('logs/info_{}.log'.format(file_date.strftime("%Y%m%d")))
+fh.setLevel(logging.DEBUG)
+# create formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+# add the handlers to the logger
+logger.addHandler(fh)
+
+# np.random.seed(7840)
+# random.seed(7840)
+
+# Select Dataset
+dataset_name = 'setap'
+x_train, x_test, y_train, y_test, index_list = data_selector(dataset_name)
 
 # Configuration for GA parameters
-population_size = 8  # number of parents to start
-crossover_parent = 4  # number of parents that will mate
-no_of_generations = 5  # number of generation that will be created
+population_size = 100
+no_of_generations = 40
+crossover_parent = 4
+crossover_ratio = 0.8
+mutation_prob = 0.03
+mutation_rate = 0.5
 
-# initialize the population with randomly generated parameters
-populations = init_pop(population_size)
-fitness_history = np.empty([no_of_generations + 1, population_size])
-genetic_history = np.empty([(no_of_generations + 1) * population_size, populations.shape[1]])
-# insert the value of initial parameters in history
-genetic_history[0:population_size, :] = populations
+start_time = time.time()
+logger.warning(f"Start simulation at {file_date}")
+logger.debug(f"set max_feature = 'sqrt' and use brier score with dynamic pc pm")
+logger.debug(f"data set = {dataset_name}")
+logger.info(f"population size = {population_size}")
+logger.info(f"number of generation = {no_of_generations}")
+logger.info(f"best elite select = {crossover_parent}")
+logger.info(f"crossover ratio = {crossover_ratio}")
+logger.info(f"mutation probability and rate = {mutation_prob}, {mutation_rate}")
+generations = [Generation()]
+generations[0].init_pop(population_size)
+for gen_no in range(no_of_generations-1):
+    print(f"Training generation number {gen_no}")
+    logger.info(f"Training generation number {gen_no}")
+    # generations[gen_no].train_populations(x_train, y_train, x_test, y_test)
+    generations[gen_no].train_populations(x_train, y_train, index_list=index_list)
+    generations[gen_no].select_survived_pop(crossover_parent)
+    gen_score = generations[gen_no].survived_populations[0].get_score()
+    print(f"Best score of generation {gen_no} : score={gen_score[0]}, auc={gen_score[1]}, brier={gen_score[3]}")
+    logger.info(f"Best score of generation {gen_no} : score={gen_score[0]}, auc={gen_score[1]}, brier={gen_score[3]}")
+    generations[gen_no].survived_populations[0].explain(logger)
+    crossover_ratio = (gen_no+1)/no_of_generations
+    child = generations[gen_no].cross_over(crossover_ratio)
+    generations.append(Generation(child))
+    mutation_prob = 1 - (gen_no+1)/no_of_generations  # dynamic mutation
+    generations[gen_no+1].mutation(mutation_prob)
+    # generations[gen_no+1].mutation(mutation_prob, mutation_rate)
+    generations[gen_no+1].add_population(generations[gen_no].survived_populations)
+print(f"Training generation number {no_of_generations-1}")
+logger.info(f"Training generation number {no_of_generations-1}")
+# generations[no_of_generations-1].train_populations(x_train, y_train, x_test, y_test)
+generations[no_of_generations-1].train_populations(x_train, y_train, index_list=index_list)
+generations[no_of_generations-1].select_survived_pop(crossover_parent)
+gen_score = generations[no_of_generations-1].survived_populations[0].get_score()
+logger.info(f"Best score of final generation : score={gen_score[0]}, auc={gen_score[1]}, brier={gen_score[3]}")
+generations[no_of_generations-1].survived_populations[0].explain(logger)
 
-for generation in range(no_of_generations):
-    print(f"This is number {generation} generation")
+print(f"##### Best individual: ")
+print(f"Best score of final generation : score={gen_score[0]}, auc={gen_score[1]}, brier={gen_score[3]}")
+generations[no_of_generations-1].survived_populations[0].explain()
 
-    # train the dataset and obtain fitness
-    fitness_score = train_populations(population=populations,
-                                      trainset_feature=x_train,
-                                      trainset_label=y_train,
-                                      testset_feature=x_test,
-                                      testset_label=y_test)
-    fitness_history[generation, :] = fitness_score
+total_time = (time.time() - start_time)
+print(f"Total time elapse: {total_time}")
+logger.info(f"Total elapse time: {total_time}")
 
-    # best score in the current iteration
-    print('Best fitness score in the this iteration = {}'.format(np.max(fitness_history[generation, :])))
-    # survival of the fittest - take the top parents, based on the fitness value and number of parents needed to be
-    # selected
-    parents = get_best_population(population=populations,
-                                  fitness=fitness_score,
-                                  no_of_parent=crossover_parent)
 
-    # mate these parents to create children having parameters from these parents (we are using uniform crossover)
-    children = crossover_uniform(parents=parents,
-                                 no_of_child=(population_size - parents.shape[0]),
-                                 no_of_param=parents.shape[1])
-
-    # add mutation to create genetic diversity
-    children_mutated = mutation(children, parents.shape[1])
-
-    '''
-    We will create new population, which will contain parents that where selected previously based on the
-    fitness score and rest of them  will be children
-    '''
-    populations[0:parents.shape[0], :] = parents  # fittest parents
-    populations[parents.shape[0]:, :] = children_mutated  # children
-
-    # score parent information
-    genetic_history[(generation + 1) * population_size: (generation + 1) * population_size + population_size,
-    :] = populations
-
-# Best solution from the final iteration
-fitness = train_populations(population=populations,
-                            trainset_feature=x_train,
-                            trainset_label=y_train,
-                            testset_feature=x_test,
-                            testset_label=y_test)
-fitness_history[no_of_generations, :] = fitness
-# index of the best solution
-bestFitnessIndex = np.where(fitness == np.max(fitness))[0][0]
-# Best fitness
-print("Best fitness is =", fitness[bestFitnessIndex])
-# Best parameters
-print("Best parameters are:")
-print('learning_rate', populations[bestFitnessIndex][0])
-print('n_estimators', int(populations[bestFitnessIndex][1]))
-print('max_depth', int(populations[bestFitnessIndex][2]))
-print('min_samples_split', populations[bestFitnessIndex][3])
-print('min_samples_leaf', populations[bestFitnessIndex][4])
-print('max_features', int(populations[bestFitnessIndex][5]))
+# # All elite population
+# elite_population = []
+# elite_score = []
+# for gen in generations:
+#     elite_population += [x for x in gen.survived_populations]
+#     elite_score += [x.score for x in gen.survived_populations]
+# elite_population = Generation(elite_population)
+# elite_population.fitness_scores = elite_score
+# for i in range(len(elite_population.populations)):
+#     elite_population.populations[i].score = elite_score[i]
+# elite_population.select_survived_pop(10)
