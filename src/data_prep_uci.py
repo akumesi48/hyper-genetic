@@ -41,6 +41,9 @@ index_setap = cv_index(5, x_train_setap, y_train_setap)
 
 # Dataset audit
 data_audit = pd.read_csv("data/audit_risk.csv")
+data_audit['LOCATION_ID'] = pd.to_numeric(data_audit['LOCATION_ID'], errors='coerce')
+data_audit['LOCATION_ID'] = data_audit['LOCATION_ID'].fillna(data_audit['LOCATION_ID'].mode()[0])
+data_audit['Money_Value'] = data_audit['Money_Value'].fillna(data_audit['Money_Value'].mean())
 data_audit_label = data_audit.pop('Risk')
 x_train_audit, x_test_audit, y_train_audit, y_test_audit = train_test_split(data_audit,
                                                                             data_audit_label,

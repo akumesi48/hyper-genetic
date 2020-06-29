@@ -36,7 +36,8 @@ class Individual:
                                            min_samples_split=self.min_samples_split,
                                            min_samples_leaf=self.min_samples_leaf,
                                            subsample=self.subsample,
-                                           max_features='sqrt')
+                                           max_features='sqrt',
+                                           random_state=7840)
         model.fit(train_feature, train_label)
         total_time = (time.time() - start_time)
         self.time = total_time
@@ -59,7 +60,8 @@ class Individual:
                                            min_samples_split=self.min_samples_split,
                                            min_samples_leaf=self.min_samples_leaf,
                                            subsample=self.subsample,
-                                           max_features='sqrt')
+                                           max_features='sqrt',
+                                           random_state=7840)
         roc_auc_list = []
         f1_score_list = []
         brier_score_list = []
@@ -211,6 +213,17 @@ class Generation:
                     individual.min_samples_leaf = round(random.uniform(0.01, 0.5), 2)
                 if random.uniform(0, 1) < prob_of_mutation:
                     individual.subsample = round(random.uniform(0.7, 1), 2)
+
+
+def stopping_update(tracker, score):
+    res_score = tracker[0]
+    res_counter = tracker[1]
+    if score > tracker[0]:
+        res_counter = 0
+        res_score = score
+    else:
+        res_counter += 1
+    return (res_score, res_counter)
 
 
 def init_pop(no_of_population):
