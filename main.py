@@ -12,10 +12,10 @@ dataset_name = 'cmc'  # titanic, audit, cmc, setap
 x_train, x_test, y_train, y_test, index_list = data_selector(dataset_name)
 
 # Configuration for GA parameters
-population_size = 20
-no_of_generations = 20
+population_size = 100
+no_of_generations = 40
 crossover_parent = 4
-crossover_ratio = 0.8
+crossover_ratio = 0.7
 mutation_prob = 0.03
 mutation_rate = 0.5
 stopping_criteria = 3
@@ -69,6 +69,7 @@ for gen_no in range(no_of_generations-1):
     child = generations[gen_no].cross_over(crossover_ratio)
     generations.append(Generation(child))
     mutation_prob = 1 - (gen_no+1)/no_of_generations  # dynamic mutation
+    print(f"mutation  with probability = {mutation_prob}")
     generations[gen_no+1].mutation(mutation_prob)
     # generations[gen_no+1].mutation(mutation_prob, mutation_rate)
     generations[gen_no+1].add_population(generations[gen_no].survived_populations)
@@ -85,6 +86,11 @@ generations[-1].survived_populations[0].explain(logger)
 print(f"##### Best individual: ")
 print(f"Best score of final generation : score={gen_score[0]}, auc={gen_score[1]}, brier={gen_score[3]}")
 generations[-1].survived_populations[0].explain()
+
+evaluator = generations[-1].survived_populations[0]
+evaluator.train_model(x_train, y_train, x_test, y_test)
+print(f"#### Evaluation score: auc = {evaluator.auc}, brier = {evaluator.brier_score}")
+logger.info(f"#### Evaluation score: auc = {evaluator.auc}, brier = {evaluator.brier_score}")
 
 total_time = (time.time() - start_time)
 print(f"Total time elapse: {total_time}")
