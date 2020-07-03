@@ -8,14 +8,14 @@ from src.hyper_gen import *
 
 
 # Select Dataset
-dataset_name = 'cmc'  # titanic, audit, cmc, setap
+dataset_name = 'dota'  # titanic, audit, cmc, setap, dota
 x_train, x_test, y_train, y_test, index_list = data_selector(dataset_name)
 
 # Configuration for GA parameters
-population_size = 100
+population_size = 20
 no_of_generations = 40
 crossover_parent = 4
-crossover_ratio = 0.7
+crossover_ratio = 0.75
 mutation_prob = 0.03
 mutation_rate = 0.5
 stopping_criteria = 3
@@ -79,8 +79,8 @@ if stopping_track[1] != stopping_criteria:
     # generations[no_of_generations-1].train_populations(x_train, y_train, x_test, y_test)
     generations[no_of_generations-1].train_populations(x_train, y_train, index_list=index_list)
     generations[no_of_generations-1].select_survived_pop(crossover_parent)
-gen_score = generations[-1].survived_populations[0].get_score()
-logger.info(f"Best score of final generation : score={gen_score[0]}, auc={gen_score[1]}, brier={gen_score[3]}")
+    gen_score = generations[-1].survived_populations[0].get_score()
+    logger.info(f"Best score of final generation : score={gen_score[0]}, auc={gen_score[1]}, brier={gen_score[3]}")
 generations[-1].survived_populations[0].explain(logger)
 
 print(f"##### Best individual: ")

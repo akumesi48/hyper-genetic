@@ -21,14 +21,18 @@ def data_selector(data_name):
         return x_train_audit, x_test_audit, y_train_audit, y_test_audit, index_audit
     elif data_name == 'titanic':
         return x_train_tt, x_test_tt, y_train_tt, y_test_tt, index_tt
+    elif data_name == 'dota':
+        return x_train_dota, x_test_dota, y_train_dota, y_test_dota, index_dota
 
+
+no_of_folds = 3
 
 # Dataset cmc
 data_cmc = pd.read_csv("data/cmc.data", header=None)
 data_cmc[9] = np.where(data_cmc[9] == 1, 0, 1)
 data_cmc_label = data_cmc.pop(9)
 x_train_cmc, x_test_cmc, y_train_cmc, y_test_cmc = train_test_split(data_cmc, data_cmc_label, test_size=0.25)
-index_cmc = cv_index(5, x_train_cmc, y_train_cmc)
+index_cmc = cv_index(no_of_folds, x_train_cmc, y_train_cmc)
 
 # Dataset SETAP
 data_setap = pd.read_csv("data/setap.csv")
@@ -37,7 +41,7 @@ data_setap_label = data_setap.pop('label')
 x_train_setap, x_test_setap, y_train_setap, y_test_setap = train_test_split(data_setap,
                                                                             data_setap_label,
                                                                             test_size=0.25)
-index_setap = cv_index(5, x_train_setap, y_train_setap)
+index_setap = cv_index(no_of_folds, x_train_setap, y_train_setap)
 
 # Dataset audit
 data_audit = pd.read_csv("data/audit_risk.csv")
@@ -48,7 +52,7 @@ data_audit_label = data_audit.pop('Risk')
 x_train_audit, x_test_audit, y_train_audit, y_test_audit = train_test_split(data_audit,
                                                                             data_audit_label,
                                                                             test_size=0.25)
-index_audit = cv_index(5, x_train_audit, y_train_audit)
+index_audit = cv_index(no_of_folds, x_train_audit, y_train_audit)
 
 # Dataset titanic
 data_tt = pd.read_csv("data/titanic_train.csv")
@@ -60,7 +64,16 @@ for col in data_tt.dtypes[data_tt.dtypes == 'object'].index:
     data_tt = pd.concat([data_tt, pd.get_dummies(for_dummy, prefix=col)], axis=1)
 data_tt_labels = data_tt.pop('Survived')
 x_train_tt, x_test_tt, y_train_tt, y_test_tt = train_test_split(data_tt, data_tt_labels, test_size=0.25)
-index_tt = cv_index(5, x_train_tt, y_train_tt)
+index_tt = cv_index(no_of_folds, x_train_tt, y_train_tt)
+
+# Dataset DotA2
+x_train_dota = pd.read_csv("../dota2Dataset/dota2Train.csv", header=None)
+x_train_dota[0] = np.where(x_train_dota[0] == 1, 1, 0)
+y_train_dota = x_train_dota.pop(0)
+x_test_dota = pd.read_csv("../dota2Dataset/dota2Test.csv", header=None)
+x_test_dota[0] = np.where(x_test_dota[0] == 1, 1, 0)
+y_test_dota = x_test_dota.pop(0)
+index_dota = cv_index(no_of_folds, x_train_dota, y_train_dota)
 
 # for train_index, test_index in skf.split(x_train, y_train):
 #     train_feature, test_feature = x_train.iloc[train_index], x_train.iloc[test_index]
