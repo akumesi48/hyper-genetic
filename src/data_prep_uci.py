@@ -67,10 +67,10 @@ x_train_tt, x_test_tt, y_train_tt, y_test_tt = train_test_split(data_tt, data_tt
 index_tt = cv_index(no_of_folds, x_train_tt, y_train_tt)
 
 # Dataset DotA2
-x_train_dota = pd.read_csv("../dota2Dataset/dota2Train.csv", header=None)
+x_train_dota = pd.read_csv("data/dota2Train.csv", header=None)
 x_train_dota[0] = np.where(x_train_dota[0] == 1, 1, 0)
 y_train_dota = x_train_dota.pop(0)
-x_test_dota = pd.read_csv("../dota2Dataset/dota2Test.csv", header=None)
+x_test_dota = pd.read_csv("data/dota2Test.csv", header=None)
 x_test_dota[0] = np.where(x_test_dota[0] == 1, 1, 0)
 y_test_dota = x_test_dota.pop(0)
 index_dota = cv_index(no_of_folds, x_train_dota, y_train_dota)

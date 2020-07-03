@@ -8,7 +8,7 @@ from src.hyper_gen import *
 
 
 # Select Dataset
-dataset_name = 'dota'  # titanic, audit, cmc, setap, dota
+dataset_name = 'titanic'  # titanic, audit, cmc, setap, dota
 x_train, x_test, y_train, y_test, index_list = data_selector(dataset_name)
 
 # Configuration for GA parameters
