@@ -34,7 +34,7 @@ fh.setFormatter(formatter)
 logger.addHandler(fh)
 
 # np.random.seed(7840)
-# random.seed(7840)
+random.seed(7840)
 print(f"Start simulation at {file_date}")
 print(f"data set = {dataset_name}")
 
@@ -64,7 +64,7 @@ for gen_no in range(no_of_generations-1):
         print("Stopping criteria reached.")
         logger.debug("Stopping criteria reached.")
         break
-    generations[gen_no].survived_populations[0].explain(logger)
+    # generations[gen_no].survived_populations[0].explain(logger)
     crossover_ratio = (gen_no+1)/no_of_generations
     child = generations[gen_no].cross_over(crossover_ratio)
     generations.append(Generation(child))
@@ -79,8 +79,8 @@ if stopping_track[1] != stopping_criteria:
     # generations[no_of_generations-1].train_populations(x_train, y_train, x_test, y_test)
     generations[no_of_generations-1].train_populations(x_train, y_train, index_list=index_list)
     generations[no_of_generations-1].select_survived_pop(crossover_parent)
-    gen_score = generations[-1].survived_populations[0].get_score()
-    logger.info(f"Best score of final generation : score={gen_score[0]}, auc={gen_score[1]}, brier={gen_score[3]}")
+gen_score = generations[-1].survived_populations[0].get_score()
+logger.info(f"Best score of final generation : score={gen_score[0]}, auc={gen_score[1]}, brier={gen_score[3]}")
 generations[-1].survived_populations[0].explain(logger)
 
 print(f"##### Best individual: ")

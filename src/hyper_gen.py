@@ -10,7 +10,7 @@ class Individual:
     def __init__(self, parameters=None):
         if parameters is None:
             self.learning_rate = round(random.uniform(0.01, 1), 2)
-            self.n_estimators = int(random.randrange(10, 500, step=20))
+            self.n_estimators = int(random.randrange(10, 1000, step=20))
             self.max_depth = int(random.randrange(1, 15, step=1))
             self.min_samples_split = round(random.uniform(0.01, 1.0), 2)
             self.min_samples_leaf = round(random.uniform(0.01, 0.5), 2)

@@ -5,7 +5,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import time
 
-from src.data_preparation import *
+# from src.data_preparation import *
+from src.data_prep_uci import *
 
 start_time = time.time()
 baseline = GradientBoostingClassifier(learning_rate=0.1,
@@ -47,30 +48,60 @@ print(f"Total time elapse: {total_time}")
 # min_samples_splits = np.linspace(0.1, 1.0, 10, endpoint=True)
 # min_samples_leafs = np.linspace(0.1, 0.5, 5, endpoint=True)
 
-param_test = {'learning_rate': [1, 0.5, 0.25, 0.1, 0.05, 0.01],
-              'n_estimators': [10, 20, 40, 80, 100, 300, 600, 1000],
-              'max_depth': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-              'min_samples_split': [0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1.0],
-              'min_samples_leaf': [0.01, 0.05, 0.1, 0.25, 0.5],
-              'subsample': [0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]}
+# param_test = {'learning_rate': [1, 0.5, 0.25, 0.1, 0.05, 0.01],
+#               'n_estimators': [10, 20, 40, 80, 100, 300, 600, 1000],
+#               'max_depth': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+#               'min_samples_split': [0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1.0],
+#               'min_samples_leaf': [0.01, 0.05, 0.1, 0.25, 0.5],
+#               'subsample': [0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]}
+
+
+# Run model function
+def train_gbm(trainset_feature, trainset_label, testset_feature, testset_label, learning_rate=0.01, n_estimators=50,
+              max_depth=10, min_samples_split=0.5, min_samples_leaf=0.2, subsample=1):
+    model = GradientBoostingClassifier(learning_rate=learning_rate, n_estimators=n_estimators, max_depth=max_depth,
+                                       min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf,
+                                       subsample=subsample, max_features='sqrt')
+    model.fit(trainset_feature, trainset_label)
+    pred_label = model.predict(testset_feature)
+
+    false_positive_rate, true_positive_rate, thresholds = roc_curve(testset_label, pred_label)
+    roc_auc = auc(false_positive_rate, true_positive_rate)
+    return roc_auc
+
+# Select Dataset
+dataset_name = 'dota'  # titanic, audit, cmc, setap, dota
+x_train, x_test, y_train, y_test, index_list = data_selector(dataset_name)
+
+param_test = {'learning_rate': [0.5, 0.1, 0.05, 0.01],
+              'n_estimators': [10, 50, 100, 500],
+              'max_depth': [1, 2, 3, 4, 5, 6],
+              'min_samples_split': [0.01, 0.05, 0.1, 0.5, 1.0],
+              'min_samples_leaf': [0.01, 0.05, 0.1, 0.5],
+              'subsample': [0.7, 0.8, 0.8, 0.9]}
 
 start_time = time.time()
 # p_test4 = {'min_samples_split': [2, 4, 6, 8, 10, 20, 40, 60, 100],
 #            'min_samples_leaf': [1, 3, 5, 7, 9]}
 
-tuning = GridSearchCV(estimator=GradientBoostingClassifier(learning_rate=0.01,
-                                                           n_estimators=1500,
-                                                           max_depth=4,
-                                                           subsample=1,
-                                                           max_features='sqrt',
-                                                           random_state=10),
+tuning = GridSearchCV(estimator=GradientBoostingClassifier(max_features='sqrt',
+                                                           random_state=7840),
                       param_grid=param_test,
                       scoring='accuracy',
                       n_jobs=-1,
                       iid=False,
                       cv=5)
-tuning.fit(data_cmc, data_cmc_label)
+tuning.fit(x_train, y_train)
 # tuning.grid_scores_, tuning.best_params_, tuning.best_score_
-
 total_time = (time.time() - start_time)
 print(f"Total time elapse: {total_time}")
+
+validate_score = train_gbm(x_train, y_train, x_test, y_test,
+                           tuning.best_params_['learning_rate'],
+                           tuning.best_params_['n_estimators'],
+                           tuning.best_params_['max_depth'],
+                           tuning.best_params_['min_samples_split'],
+                           tuning.best_params_['min_samples_leaf'],
+                           tuning.best_params_['subsample'])
+print(f"Validate score: {validate_score}")
+
