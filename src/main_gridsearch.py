@@ -104,4 +104,6 @@ validate_score = train_gbm(x_train, y_train, x_test, y_test,
                            tuning.best_params_['min_samples_leaf'],
                            tuning.best_params_['subsample'])
 print(f"Validate score: {validate_score}")
+print(f"Total time elapse: {total_time}")
+print(tuning.best_params_)
 
