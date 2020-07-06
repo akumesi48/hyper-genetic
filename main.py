@@ -8,14 +8,14 @@ from src.hyper_gen import *
 
 
 # Select Dataset
-dataset_name = 'titanic'  # titanic, audit, cmc, setap, dota
+dataset_name = 'cmc'  # titanic, audit, cmc, setap, dota
 x_train, x_test, y_train, y_test, index_list = data_selector(dataset_name)
 
 # Configuration for GA parameters
 population_size = 20
 no_of_generations = 40
 crossover_parent = 4
-crossover_ratio = 0.75
+crossover_ratio = 0.9
 mutation_prob = 0.03
 mutation_rate = 0.5
 stopping_criteria = 3

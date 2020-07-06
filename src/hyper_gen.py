@@ -88,6 +88,9 @@ class Individual:
         self.score = fitness_score
         return fitness_score
 
+    def fitness_adjust(self, adjustment, multiplier):
+        self.score += (adjustment*multiplier)
+
     def get_score(self):
         return self.score, self.auc, self.f1_score, self.brier_score
 
@@ -128,12 +131,14 @@ class Generation:
             self.populations = population_list
         self.survived_populations = []
         self.fitness_scores = []
+        self.time_list = []
 
     def init_pop(self, population_size):
         for i in range(population_size):
             self.populations.append(Individual())
 
     def train_populations(self, train_feature, train_label, test_feature=None, test_label=None, index_list=None):
+        self.time_list = []
         for individual in self.populations:
             if index_list is None:
                 individual.train_model(train_feature, train_label, test_feature, test_label)
@@ -141,6 +146,16 @@ class Generation:
                 individual.train_model_cv(train_feature, train_label, index_list)
             score = individual.fitness_func()
             self.fitness_scores.append(score)
+            self.time_list.append(individual.time)
+        time_max = max(self.time_list)
+        time_min = min(self.time_list)
+        time_scale = [(((x - time_min) * (1 - 0)) / (time_max - time_min)) + 0 for x in self.time_list]
+        time_avg = sum(time_scale)/len(time_scale)
+        for individual in self.populations:
+            score_adjust = (((individual.time - time_min) * (1 - 0)) / (time_max - time_min)) + 0
+            score_adjust = time_avg-score_adjust
+            individual.fitness_adjust(score_adjust, 0.3)
+            # NewValue = (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
 
     def select_survived_pop(self, survive_individual):
         self.survived_populations = []
