@@ -1,6 +1,7 @@
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import classification_report
 from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import roc_curve, auc
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import time
