@@ -1,7 +1,8 @@
 <application>
-  <component name="FileTypeManager" version="17">
+  <component name="FileTypeManager" version="18">
     <extensionMap>
       <mapping pattern=".gitignored" type="GitIgnore file" />
+      <mapping pattern="catalog_training_zero.yml" type="YAML" />
     </extensionMap>
   </component>
 </application>
