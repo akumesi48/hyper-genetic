@@ -2,6 +2,7 @@
   <component name="FileTypeManager" version="18">
     <extensionMap>
       <mapping pattern=".gitignored" type="GitIgnore file" />
+      <mapping ext="log" type="PLAIN_TEXT" />
       <mapping pattern="catalog_training_zero.yml" type="YAML" />
     </extensionMap>
   </component>
